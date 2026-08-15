@@ -16,6 +16,11 @@ export default function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const [selected, setSelected] = useState<Version | null>(null);
 
+  // 切换项目时清空选中版本，避免串显上一项目的版本
+  useEffect(() => {
+    setSelected(null);
+  }, [id]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['project', id],
     queryFn: () => projectApi.get(id!),
@@ -39,8 +44,9 @@ export default function ProjectPage() {
   const latest = versions.length > 0 ? versions[versions.length - 1] : null;
   const current = selected ?? latest;
 
-  // 优先展示本次运行实时结果，其次选中的版本
-  const previewFiles = result?.files ?? current?.files ?? [];
+  // 实时结果仅属于产生它的项目，切换项目后回退到版本数据
+  const liveFiles = projectId === id ? result?.files : null;
+  const previewFiles = liveFiles ?? current?.files ?? [];
 
   if (isLoading) {
     return (
