@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Sparkles } from 'lucide-react';
 import PipelineChat from '@/components/PipelineChat';
@@ -8,10 +8,15 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 export default function HomePage() {
   const navigate = useNavigate();
   const projectId = usePipelineStore((s) => s.projectId);
+  // 挂载时的 projectId：只有本次运行新创建的项目才触发跳转，
+  // 避免运行中/完成后回到首页被立即弹回项目页
+  const initialProjectId = useRef(projectId);
 
-  // 收到 project_created 后自动跳转到新项目工作区
+  // 从首页发起的生成收到 project_created 后，自动跳转到新项目工作区
   useEffect(() => {
-    if (projectId) navigate(`/project/${projectId}`);
+    if (projectId && projectId !== initialProjectId.current) {
+      navigate(`/project/${projectId}`);
+    }
   }, [projectId, navigate]);
 
   return (

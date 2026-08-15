@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toast';
+import { queryClient } from '@/lib/queryClient';
 import RootLayout from '@/routes/__root';
 import HomePage from '@/routes/index';
 import LoginPage from '@/routes/login';
 import ProjectPage from '@/routes/project.$id';
 import RegisterPage from '@/routes/register';
 import { useAuthStore } from '@/stores/authStore';
-
-const queryClient = new QueryClient();
 
 const router = createBrowserRouter([
   {
