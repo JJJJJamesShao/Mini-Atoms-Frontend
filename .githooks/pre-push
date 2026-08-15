@@ -1,0 +1,28 @@
+#!/bin/sh
+# 分支保护：
+# 1. 禁止推送 main 分支
+# 2. 禁止推送非 feat/ 开头的分支
+# 3. 禁止任何分支推向远程 main 引用
+while read -r local_ref local_sha remote_ref remote_sha; do
+  local_branch="${local_ref#refs/heads/}"
+  remote_branch="${remote_ref#refs/heads/}"
+
+  if [ "$remote_branch" = "main" ]; then
+    echo "error: 禁止向远程 main 引用推送（$local_ref -> $remote_ref）" >&2
+    exit 1
+  fi
+
+  if [ "$local_branch" = "main" ]; then
+    echo "error: 禁止推送 main 分支" >&2
+    exit 1
+  fi
+
+  case "$local_branch" in
+    feat/*) ;;
+    *)
+      echo "error: 只允许推送 feat/ 开头的分支（当前：$local_branch）" >&2
+      exit 1
+      ;;
+  esac
+done
+exit 0

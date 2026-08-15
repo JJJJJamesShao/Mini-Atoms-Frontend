@@ -1,0 +1,8 @@
+#!/bin/sh
+# 禁止在 main 分支上直接提交
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+if [ "$branch" = "main" ]; then
+  echo "error: 禁止在 main 分支上直接提交，请切换到 feat/ 分支" >&2
+  exit 1
+fi
+exit 0
