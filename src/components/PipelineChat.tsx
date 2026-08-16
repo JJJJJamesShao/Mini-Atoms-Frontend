@@ -44,9 +44,9 @@ export default function PipelineChat({
     setInput('');
     void start({
       input: trimmed,
-      project_id: projectId,
-      current_files: currentFiles,
-      base_version_no: baseVersionNo,
+      projectId,
+      currentFiles,
+      baseVersionNo,
     });
   };
 

@@ -145,16 +145,16 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
 
         case 'project_created':
         case 'project_updated':
-          return { projectId: event.project_id, versionNo: event.version_no };
+          return { projectId: event.projectId, versionNo: event.versionNo };
 
         case 'done': {
-          const ok = event.final_state === 'done';
+          const ok = event.finalState === 'done';
           return {
             state: ok ? 'done' : 'error',
             result: event.result,
             questions: event.questions,
             quality: event.quality,
-            projectId: event.project_id ?? s.projectId,
+            projectId: event.projectId ?? s.projectId,
             error: ok ? null : (event.reason ?? '生成失败'),
             stages: s.stages.map((st) =>
               st.status === 'active'
