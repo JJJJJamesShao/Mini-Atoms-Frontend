@@ -10,6 +10,10 @@ export interface Project {
   id: string;
   user_id: string;
   title: string;
+  // 草稿项目状态：summarizing = 标题生成中（乐观 UI 转圈），ready = 正常。
+  // 可选：未部署 draft 接口的旧后端不返回该字段，视为 ready
+  status?: 'summarizing' | 'ready';
+  input_preview?: string;
   pinned: boolean;
   created_at: string; // ISO8601
 }

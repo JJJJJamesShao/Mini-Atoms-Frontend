@@ -30,6 +30,8 @@ interface PipelineStore {
 
   /** 开始一次运行：重置运行态并记录用户输入 */
   beginRun: (input: string) => void;
+  /** 首次生成：草稿项目创建成功后记录 projectId（驱动首页跳转工作区） */
+  setDraftProject: (projectId: string) => void;
   /** 由 usePipeline 驱动：处理一条 SSE 事件 */
   handleEvent: (event: SseEvent) => void;
   setError: (message: string) => void;
@@ -75,6 +77,8 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
         },
       ],
     })),
+
+  setDraftProject: (projectId) => set({ projectId }),
 
   handleEvent: (event) =>
     set((s) => {
