@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -15,10 +15,15 @@ import type { Version } from '@/types/api';
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const [selected, setSelected] = useState<Version | null>(null);
+  // 默认"阶段"标签：预览为空时没有意义；有可预览内容后才允许切换
+  const [tab, setTab] = useState<'preview' | 'timeline' | 'versions'>(
+    'timeline',
+  );
 
-  // 切换项目时清空选中版本，避免串显上一项目的版本
+  // 切换项目时清空选中版本并回到阶段标签，避免串显上一项目
   useEffect(() => {
     setSelected(null);
+    setTab('timeline');
   }, [id]);
 
   const { data, isLoading, error } = useQuery({
@@ -47,6 +52,31 @@ export default function ProjectPage() {
   // 实时结果仅属于产生它的项目，切换项目后回退到版本数据
   const liveFiles = projectId === id ? result?.files : null;
   const previewFiles = liveFiles ?? current?.files ?? [];
+  const previewable = previewFiles.length > 0;
+
+  // verify 阶段通过且有可预览内容时，自动从"阶段"切到"预览"（每次运行只切一次，
+  // 之后用户手动切标签不再被拉回）
+  const runStartedAt = usePipelineStore((s) => s.runStartedAt);
+  const verifyPassed = stages.some(
+    (s) => s.stage.startsWith('verify') && s.status === 'done',
+  );
+  const lastAutoSwitchRun = useRef<number | null>(null);
+  useEffect(() => {
+    if (
+      verifyPassed &&
+      previewable &&
+      runStartedAt !== null &&
+      lastAutoSwitchRun.current !== runStartedAt
+    ) {
+      lastAutoSwitchRun.current = runStartedAt;
+      setTab('preview');
+    }
+  }, [verifyPassed, previewable, runStartedAt]);
+
+  // 当前在预览标签但内容不再可预览（如切换项目）时回退到阶段标签
+  useEffect(() => {
+    if (tab === 'preview' && !previewable) setTab('timeline');
+  }, [tab, previewable]);
 
   if (isLoading) {
     return (
@@ -78,9 +108,15 @@ export default function ProjectPage() {
         <h1 className="mb-3 truncate text-lg font-semibold">
           {data.project.title}
         </h1>
-        <Tabs defaultValue="preview" className="flex min-h-0 flex-1 flex-col">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as typeof tab)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <TabsList>
-            <TabsTrigger value="preview">预览</TabsTrigger>
+            <TabsTrigger value="preview" disabled={!previewable}>
+              预览
+            </TabsTrigger>
             <TabsTrigger value="timeline">阶段</TabsTrigger>
             <TabsTrigger value="versions">
               版本（{versions.length}）

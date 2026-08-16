@@ -91,12 +91,15 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
     set((s) => {
       switch (event.type) {
         case 'start':
-          // SOP 步骤初始化为 pending 阶段卡片
+          // SOP 步骤初始化为 pending 阶段卡片；
+          // done 是内部终态步骤，不作为阶段卡片展示
           return {
-            stages: event.sop.steps.map((step) => ({
-              stage: step,
-              status: 'pending' as const,
-            })),
+            stages: event.sop.steps
+              .filter((step) => step !== 'done')
+              .map((step) => ({
+                stage: step,
+                status: 'pending' as const,
+              })),
           };
 
         case 'agent_event': {
