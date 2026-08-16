@@ -83,11 +83,6 @@ export default function PipelineChat({
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {messages.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            描述你想要的应用，开始生成
-          </p>
-        )}
         {messages.map((m) => (
           <div
             key={m.id}
