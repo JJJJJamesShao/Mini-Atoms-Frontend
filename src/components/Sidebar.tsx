@@ -85,10 +85,21 @@ export default function Sidebar() {
               )}
             >
               <div className="flex items-center gap-1.5 truncate">
-                {p.pinned && (
-                  <Pin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                {p.status === 'summarizing' ? (
+                  <>
+                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                    <span className="truncate text-muted-foreground">
+                      {p.title}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {p.pinned && (
+                      <Pin className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="truncate">{p.title}</span>
+                  </>
                 )}
-                <span className="truncate">{p.title}</span>
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 {dayjs(p.created_at).format('MM-DD HH:mm')}

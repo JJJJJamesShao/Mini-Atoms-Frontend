@@ -71,8 +71,9 @@ export const authApi = {
 export const projectApi = {
   list: () => apiFetch<{ projects: Project[] }>('/api/projects'),
   get: (id: string) => apiFetch<ProjectWithVersions>(`/api/projects/${id}`),
-  create: (body: { title: string }) =>
-    apiFetch<Project>('/api/projects', {
+  // 首次生成前调用：秒级创建草稿项目（status=summarizing），标题由后端异步生成
+  createDraft: (body: { input: string }) =>
+    apiFetch<{ project: Project }>('/api/projects/draft', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
