@@ -27,6 +27,10 @@ interface PipelineStore {
   quality: QualityResult | null;
   projectId: string | null;
   versionNo: number | null;
+  /** 生成模式：mock = 罐头数据（启发式判定），live = 真实 LLM；未运行为 null */
+  mode: 'mock' | 'live' | null;
+  /** 本次运行开始时间（用于 mock 启发式的耗时判定） */
+  runStartedAt: number | null;
 
   /** 开始一次运行：重置运行态并记录用户输入 */
   beginRun: (input: string) => void;
@@ -56,6 +60,8 @@ const initialRunState = {
   quality: null,
   projectId: null,
   versionNo: null,
+  mode: null as 'mock' | 'live' | null,
+  runStartedAt: null as number | null,
 };
 
 export const usePipelineStore = create<PipelineStore>((set) => ({
@@ -67,6 +73,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       ...initialRunState,
       state: 'running',
       currentInput: input,
+      runStartedAt: Date.now(),
       messages: [
         ...s.messages,
         {
@@ -153,8 +160,28 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
 
         case 'done': {
           const ok = event.finalState === 'done';
+          // Mock 启发式判定：罐头执行器毫秒级返回（真实 LLM 生成远超 2s），
+          // 且 notes 为固定罐头文案（特征串与后端 lib/mock/canned.ts 对齐）
+          const CANNED_NOTES_SIGNATURES = [
+            '无持久化（刷新清空）',
+            '15x15 网格',
+            'rAF 驱动显示',
+          ];
+          const durationMs = s.runStartedAt
+            ? Date.now() - s.runStartedAt
+            : null;
+          const looksCanned =
+            !!event.result?.notes &&
+            CANNED_NOTES_SIGNATURES.some((sig) =>
+              event.result!.notes.includes(sig),
+            );
+          const mode =
+            looksCanned || (durationMs !== null && durationMs < 2000)
+              ? ('mock' as const)
+              : ('live' as const);
           return {
             state: ok ? 'done' : 'error',
+            mode,
             result: event.result,
             questions: event.questions,
             quality: event.quality,

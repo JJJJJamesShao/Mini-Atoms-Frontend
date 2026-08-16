@@ -24,10 +24,6 @@ export default function HomePage() {
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
         <Sparkles className="h-10 w-10 text-muted-foreground" />
         <h1 className="text-2xl font-bold">用一句话生成你的应用</h1>
-        <p className="max-w-md text-sm text-muted-foreground">
-          在下方描述你想要的应用，Mini Atoms 会自动完成设计、开发与质量检查，
-          生成的项目会出现在左侧列表中。
-        </p>
       </div>
       <div className="mx-auto w-full max-w-2xl pb-6">
         <div className="h-64 rounded-lg border border-border bg-card">

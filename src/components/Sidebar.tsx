@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
+import { Home, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -60,8 +60,16 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-card">
-      <div className="p-4">
+      <div className="flex items-center justify-between p-4">
         <span className="text-lg font-bold tracking-tight">Mini Atoms</span>
+        <Button
+          variant="outline"
+          size="icon"
+          title="回到首页"
+          onClick={() => navigate('/')}
+        >
+          <Home className="h-4 w-4" />
+        </Button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-2">

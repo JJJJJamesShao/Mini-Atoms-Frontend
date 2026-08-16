@@ -30,6 +30,7 @@ export default function PipelineChat({
   const { state, start, stop } = usePipeline();
   const messages = usePipelineStore((s) => s.messages);
   const questions = usePipelineStore((s) => s.questions);
+  const mode = usePipelineStore((s) => s.mode);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const running = state === 'running' || state === 'stopping';
@@ -55,7 +56,22 @@ export default function PipelineChat({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <span className="text-sm font-medium">对话</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">对话</span>
+          {mode === 'mock' && (
+            <span
+              className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
+              title="当前为演示模式（罐头数据），真实生成请联系管理员配置 LLM"
+            >
+              演示模式
+            </span>
+          )}
+          {mode === 'live' && (
+            <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
+              真实生成
+            </span>
+          )}
+        </div>
         <span
           className={cn(
             'rounded-full px-2 py-0.5 text-xs font-medium',
