@@ -48,12 +48,17 @@ async function runPipeline(params: PipelineRequest): Promise<void> {
     // 首次生成：先创建草稿项目（秒级返回），Sidebar 立即出现"创建中"条目，
     // store.projectId 变更驱动首页自动跳转到工作区
     if (!projectId) {
-      const { project } = await projectApi.createDraft({
-        input: params.input,
-      });
-      projectId = project.id;
-      usePipelineStore.getState().setDraftProject(projectId);
-      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+      try {
+        const { project } = await projectApi.createDraft({
+          input: params.input,
+        });
+        projectId = project.id;
+        usePipelineStore.getState().setDraftProject(projectId);
+        void queryClient.invalidateQueries({ queryKey: ['projects'] });
+      } catch (err) {
+        // 旧后端未部署 draft 接口（404）：回退到 Pipeline 自动建项目的原始流程
+        if ((err as { statusCode?: unknown })?.statusCode !== 404) throw err;
+      }
     }
 
     for await (const event of streamPipeline(
