@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Loader2, Pin, PinOff, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects } from '@/hooks/useProjects';
@@ -27,9 +26,6 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const { data, isLoading } = useProjects();
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Project | null>(null);
 
   // 置顶项目优先，其余按创建时间倒序
@@ -40,23 +36,6 @@ export default function Sidebar() {
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ['projects'] });
-
-  const handleCreate = async () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    setCreating(true);
-    try {
-      const project = await projectApi.create({ title: trimmed });
-      await refresh();
-      setCreateOpen(false);
-      setTitle('');
-      navigate(`/project/${project.id}`);
-    } catch (err) {
-      toast(getErrorMessage(err, '创建项目失败'), { variant: 'destructive' });
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handlePin = async (project: Project) => {
     try {
@@ -81,16 +60,8 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-border bg-card">
-      <div className="flex items-center justify-between p-4">
+      <div className="p-4">
         <span className="text-lg font-bold tracking-tight">Mini Atoms</span>
-        <Button
-          variant="outline"
-          size="icon"
-          title="新建项目"
-          onClick={() => setCreateOpen(true)}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-2">
@@ -101,7 +72,7 @@ export default function Sidebar() {
         )}
         {!isLoading && projects.length === 0 && (
           <p className="px-2 py-8 text-center text-sm text-muted-foreground">
-            还没有项目，点击右上角 + 新建
+            还没有项目，在首页输入需求即可生成
           </p>
         )}
         {projects.map((p) => (
@@ -159,32 +130,6 @@ export default function Sidebar() {
           退出
         </Button>
       </div>
-
-      {/* 新建项目对话框 */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>新建项目</DialogTitle>
-            <DialogDescription>给项目起个名字</DialogDescription>
-          </DialogHeader>
-          <Input
-            autoFocus
-            placeholder="例如：待办事项应用"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleCreate} disabled={creating || !title.trim()}>
-              {creating && <Loader2 className="h-4 w-4 animate-spin" />}
-              创建
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* 删除确认对话框 */}
       <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
