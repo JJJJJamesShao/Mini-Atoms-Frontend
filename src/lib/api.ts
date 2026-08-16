@@ -18,7 +18,8 @@ export async function apiFetch<T>(
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      // 仅带 body 时声明 JSON：空 body 配 application/json 会被 Fastify 400 拒绝
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
       ...options.headers,
     },
