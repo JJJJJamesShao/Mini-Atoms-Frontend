@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import type { ProcessLog, StageState, VersionFile } from '@/types/api';
-import type { PipelineState, SseEvent } from '@/types/pipeline';
+import type {
+  PipelineState,
+  SseEvent,
+  UserFriendlySpec,
+} from '@/types/pipeline';
 
 export interface ChatMessage {
   id: string;
@@ -31,11 +35,15 @@ interface PipelineStore {
   mode: 'mock' | 'live' | null;
   /** 本次运行开始时间（用于 mock 启发式的耗时判定） */
   runStartedAt: number | null;
+  /** 确认门挂起中的规格（spec_ready）；非 null 时展示确认面板 */
+  pendingSpec: UserFriendlySpec | null;
 
   /** 开始一次运行：重置运行态并记录用户输入 */
   beginRun: (input: string) => void;
   /** 首次生成：草稿项目创建成功后记录 projectId（驱动首页跳转工作区） */
   setDraftProject: (projectId: string) => void;
+  /** 用户落锤/超时/异常后收起规格确认面板 */
+  clearPendingSpec: () => void;
   /** 由 usePipeline 驱动：处理一条 SSE 事件 */
   handleEvent: (event: SseEvent) => void;
   setError: (message: string) => void;
@@ -62,6 +70,7 @@ const initialRunState = {
   versionNo: null,
   mode: null as 'mock' | 'live' | null,
   runStartedAt: null as number | null,
+  pendingSpec: null as UserFriendlySpec | null,
 };
 
 export const usePipelineStore = create<PipelineStore>((set) => ({
@@ -87,6 +96,8 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
 
   setDraftProject: (projectId) => set({ projectId }),
 
+  clearPendingSpec: () => set({ pendingSpec: null }),
+
   handleEvent: (event) =>
     set((s) => {
       switch (event.type) {
@@ -98,6 +109,10 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
               status: 'pending' as const,
             })),
           };
+
+        case 'spec_ready':
+          // 确认门挂起：展示确认面板（auto-approve/MOCK 不会收到本事件）
+          return { pendingSpec: event.spec };
 
         case 'agent_event': {
           const p = event.payload;
@@ -182,6 +197,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
           return {
             state: ok ? 'done' : 'error',
             mode,
+            pendingSpec: null,
             result: event.result,
             questions: event.questions,
             quality: event.quality,
@@ -210,6 +226,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
           return {
             state: 'error',
             error: event.message,
+            pendingSpec: null,
             messages: [
               ...s.messages,
               {
@@ -237,6 +254,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
         case 'aborted':
           return {
             state: 'idle',
+            pendingSpec: null,
             messages: [
               ...s.messages,
               {
@@ -257,6 +275,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
     set((s) => ({
       state: 'error',
       error: message,
+      pendingSpec: null,
       messages: [
         ...s.messages,
         {
@@ -268,7 +287,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       ],
     })),
 
-  setIdle: () => set({ state: 'idle' }),
+  setIdle: () => set({ state: 'idle', pendingSpec: null }),
   setStopping: () => set({ state: 'stopping' }),
 
   reset: () => set({ ...initialRunState, messages: [] }),

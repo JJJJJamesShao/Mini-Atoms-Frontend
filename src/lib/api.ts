@@ -92,4 +92,16 @@ export const projectApi = {
 export const pipelineApi = {
   abort: () =>
     apiFetch<{ success: boolean }>('/api/pipeline/abort', { method: 'POST' }),
+  // 确认门落锤（docs/pipeline-approve.md）：approved=false + feedback 要求重生规格；
+  // modifications 仅存证不影响本次生成；200 仅代表决策已接收，进度以 SSE 为准
+  approve: (body: {
+    project_id?: string;
+    approved: boolean;
+    feedback?: string;
+    modifications?: { note: string };
+  }) =>
+    apiFetch<{ success: boolean }>('/api/pipeline/approve', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 };
