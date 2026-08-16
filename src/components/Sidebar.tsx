@@ -25,6 +25,57 @@ import { getErrorMessage, projectApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/types/api';
 
+interface ProjectItemMenuProps {
+  project: Project;
+  onPin: (project: Project) => void;
+  onDelete: (project: Project) => void;
+}
+
+// 项目条目的"..."菜单。菜单打开期间必须保持触发按钮可见：
+// 否则 Radix modal 锁定外部 pointer-events → group-hover 失效 → 按钮 display:none
+// → 锚点矩形塌缩为 0，菜单跳到页面左上角
+function ProjectItemMenu({ project, onPin, onDelete }: ProjectItemMenuProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      className={cn(
+        'absolute right-2 top-1.5',
+        open ? 'block' : 'hidden group-hover:block',
+      )}
+    >
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            title="更多操作"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="right">
+          <DropdownMenuItem onSelect={() => onPin(project)}>
+            {project.pinned ? (
+              <PinOff className="h-3.5 w-3.5" />
+            ) : (
+              <Pin className="h-3.5 w-3.5" />
+            )}
+            {project.pinned ? '取消置顶' : '置顶'}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive"
+            onSelect={() => onDelete(project)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            删除
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const navigate = useNavigate();
   const { id: currentId } = useParams();
@@ -120,37 +171,7 @@ export default function Sidebar() {
                 {dayjs(p.created_at).format('MM-DD HH:mm')}
               </div>
             </NavLink>
-            <div className="absolute right-2 top-1.5 hidden group-hover:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    title="更多操作"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="right">
-                  <DropdownMenuItem onSelect={() => handlePin(p)}>
-                    {p.pinned ? (
-                      <PinOff className="h-3.5 w-3.5" />
-                    ) : (
-                      <Pin className="h-3.5 w-3.5" />
-                    )}
-                    {p.pinned ? '取消置顶' : '置顶'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onSelect={() => setDeleting(p)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    删除
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <ProjectItemMenu project={p} onPin={handlePin} onDelete={setDeleting} />
           </div>
         ))}
       </nav>
