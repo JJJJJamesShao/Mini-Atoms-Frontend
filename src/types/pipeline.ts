@@ -1,10 +1,12 @@
 import type { VersionFile } from './api';
 
+// Pipeline 请求体与 SSE 事件沿用后端 camelCase 协议
+// （后端 zod schema 严格校验 camelCase，snake_case 字段会被静默丢弃）
 export interface PipelineRequest {
   input: string;
-  project_id?: string;
-  current_files?: VersionFile[];
-  base_version_no?: number; // 后端兼容 baseVersionNo，类型声明用 snake_case
+  projectId?: string;
+  currentFiles?: VersionFile[];
+  baseVersionNo?: number;
 }
 
 // SSE 事件联合类型
@@ -12,20 +14,21 @@ export type SseEvent =
   | { type: 'start'; input: string; sop: { id: string; name: string; steps: string[] } }
   | { type: 'agent_event'; payload: AgentEvent }
   | { type: 'heartbeat'; timestamp: number }
-  | { type: 'project_created'; project_id: string; version_no: number }
-  | { type: 'project_updated'; project_id: string; version_no: number }
+  | { type: 'project_created'; projectId: string; versionNo: number }
+  | { type: 'project_updated'; projectId: string; versionNo: number }
   | {
       type: 'done';
-      final_state: 'done' | 'fail';
+      finalState: 'done' | 'fail';
       reason: string | null;
       questions: string[] | null;
-      project_id: string | null;
+      projectId: string | null;
       result: { files: VersionFile[]; notes: string } | null;
+      // 仅 finalState === 'done' 且有结果时下发，否则为 null
       quality: {
         passed: boolean;
         score: number;
         checks: { name: string; passed: boolean }[];
-      };
+      } | null;
     }
   | { type: 'error'; message: string }
   | { type: 'aborted'; message: string }
