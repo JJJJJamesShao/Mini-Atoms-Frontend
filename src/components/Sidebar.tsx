@@ -2,8 +2,14 @@ import { useState } from 'react';
 import { NavLink, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { Home, Loader2, Pin, PinOff, Trash2 } from 'lucide-react';
+import { Home, Loader2, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -88,7 +94,8 @@ export default function Sidebar() {
             <NavLink
               to={`/project/${p.id}`}
               className={cn(
-                'block rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent',
+                // pr-10 为右侧"..."按钮预留空间，长标题 truncate 不侵入按钮区
+                'block rounded-md px-3 py-2 pr-10 text-sm transition-colors hover:bg-accent',
                 currentId === p.id && 'bg-accent',
               )}
             >
@@ -113,29 +120,36 @@ export default function Sidebar() {
                 {dayjs(p.created_at).format('MM-DD HH:mm')}
               </div>
             </NavLink>
-            <div className="absolute right-1 top-1 hidden gap-0.5 group-hover:flex">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                title={p.pinned ? '取消置顶' : '置顶'}
-                onClick={() => handlePin(p)}
-              >
-                {p.pinned ? (
-                  <PinOff className="h-3.5 w-3.5" />
-                ) : (
-                  <Pin className="h-3.5 w-3.5" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-destructive"
-                title="删除项目"
-                onClick={() => setDeleting(p)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+            <div className="absolute right-2 top-1.5 hidden group-hover:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    title="更多操作"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="right">
+                  <DropdownMenuItem onSelect={() => handlePin(p)}>
+                    {p.pinned ? (
+                      <PinOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Pin className="h-3.5 w-3.5" />
+                    )}
+                    {p.pinned ? '取消置顶' : '置顶'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onSelect={() => setDeleting(p)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    删除
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         ))}
