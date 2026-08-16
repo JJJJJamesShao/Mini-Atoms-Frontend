@@ -73,6 +73,18 @@ const initialRunState = {
   pendingSpec: null as UserFriendlySpec | null,
 };
 
+/** 失败原因 → 用户可读文案（与后端 failReasonText 对齐） */
+function failReasonText(reason: string | null): string {
+  switch (reason) {
+    case 'spec_rejected':
+      return '规格被拒绝，请重新描述需求。';
+    case 'need_clarification':
+      return '还需要你补充几点信息，流程已暂停等待你（见问题清单）。';
+    default:
+      return '生成校验多次未通过，请换个描述重试。';
+  }
+}
+
 export const usePipelineStore = create<PipelineStore>((set) => ({
   ...initialRunState,
   messages: [],
@@ -202,7 +214,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
             questions: event.questions,
             quality: event.quality,
             projectId: event.projectId ?? s.projectId,
-            error: ok ? null : (event.reason ?? '生成失败'),
+            error: ok ? null : failReasonText(event.reason),
             stages: s.stages.map((st) =>
               st.status === 'active'
                 ? { ...st, status: ok ? ('done' as const) : ('failed' as const) }
@@ -215,7 +227,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
                 role: 'assistant' as const,
                 content: ok
                   ? event.result?.notes || '生成完成'
-                  : `生成失败：${event.reason ?? '未知原因'}`,
+                  : failReasonText(event.reason),
                 timestamp: Date.now(),
               },
             ],
