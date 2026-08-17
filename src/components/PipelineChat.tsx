@@ -5,7 +5,7 @@ import SpecConfirmPanel from '@/components/SpecConfirmPanel';
 import { Button } from '@/components/ui/button';
 import { usePipeline } from '@/hooks/usePipeline';
 import { cn } from '@/lib/utils';
-import { usePipelineStore } from '@/stores/pipelineStore';
+import { usePipelineStore, type ChatMessage } from '@/stores/pipelineStore';
 import type { VersionFile } from '@/types/api';
 
 interface PipelineChatProps {
@@ -14,6 +14,11 @@ interface PipelineChatProps {
   baseVersionNo?: number;
   /** 只渲染输入区（首页使用）：隐藏对话标题栏、消息历史和确认面板 */
   inputOnly?: boolean;
+  /**
+   * 项目会话历史（来自项目详情接口）。store 里的 messages 只保存实时运行现场：
+   * 当前运行归属本项目时显示实时消息，否则显示本历史——保证项目间会话隔离
+   */
+  historyMessages?: ChatMessage[];
 }
 
 const STATE_LABEL: Record<string, { text: string; className: string }> = {
@@ -29,16 +34,22 @@ export default function PipelineChat({
   currentFiles,
   baseVersionNo,
   inputOnly = false,
+  historyMessages,
 }: PipelineChatProps) {
   const [input, setInput] = useState('');
   const { state, start, stop } = usePipeline();
-  const messages = usePipelineStore((s) => s.messages);
+  const liveMessages = usePipelineStore((s) => s.messages);
   const questions = usePipelineStore((s) => s.questions);
   const mode = usePipelineStore((s) => s.mode);
   const pendingSpec = usePipelineStore((s) => s.pendingSpec);
+  const messagesProjectId = usePipelineStore((s) => s.messagesProjectId);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const running = state === 'running' || state === 'stopping';
+
+  // 当前运行/对话归属本项目时显示实时现场，否则显示本项目的历史消息
+  const liveHere = projectId !== undefined && messagesProjectId === projectId;
+  const messages = liveHere ? liveMessages : (historyMessages ?? []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -64,7 +75,7 @@ export default function PipelineChat({
         <div className="flex items-center justify-between border-b border-border px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">对话</span>
-            {mode === 'mock' && (
+            {mode === 'mock' && liveHere && (
               <span
                 className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
                 title="当前为演示模式（罐头数据），真实生成请联系管理员配置 LLM"
@@ -72,12 +83,12 @@ export default function PipelineChat({
                 演示模式
               </span>
             )}
-            {mode === 'live' && (
+            {mode === 'live' && liveHere && (
               <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
                 真实生成
               </span>
             )}
-            {pendingSpec && (
+            {pendingSpec && liveHere && (
               <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
                 待确认规格
               </span>
@@ -121,7 +132,7 @@ export default function PipelineChat({
             )}
           </div>
         ))}
-        {questions && questions.length > 0 && (
+        {liveHere && questions && questions.length > 0 && (
           <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm">
             <div className="mb-1 font-medium text-yellow-400">
               需要确认的问题：
@@ -137,7 +148,9 @@ export default function PipelineChat({
         </div>
       )}
 
-      {!inputOnly && pendingSpec && <SpecConfirmPanel spec={pendingSpec} />}
+      {!inputOnly && liveHere && pendingSpec && (
+        <SpecConfirmPanel spec={pendingSpec} />
+      )}
 
       <div
         className={cn(

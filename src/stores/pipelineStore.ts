@@ -46,8 +46,6 @@ interface PipelineStore {
   setDraftProject: (projectId: string) => void;
   /** 用户落锤/超时/异常后收起规格确认面板 */
   clearPendingSpec: () => void;
-  /** 打开项目时用服务端历史整体替换对话区（仅在非运行态调用），并记录归属项目 */
-  hydrateMessages: (projectId: string, messages: ChatMessage[]) => void;
   /** 由 usePipeline 驱动：处理一条 SSE 事件 */
   handleEvent: (event: SseEvent) => void;
   setError: (message: string) => void;
@@ -114,9 +112,6 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
   setDraftProject: (projectId) => set({ projectId, messagesProjectId: projectId }),
 
   clearPendingSpec: () => set({ pendingSpec: null }),
-
-  hydrateMessages: (projectId, messages) =>
-    set({ messages, messagesProjectId: projectId }),
 
   handleEvent: (event) =>
     set((s) => {
