@@ -53,13 +53,15 @@ async function runPipeline(params: PipelineRequest): Promise<void> {
           input: params.input,
         });
         projectId = project.id;
-        usePipelineStore.getState().setDraftProject(projectId);
         void queryClient.invalidateQueries({ queryKey: ['projects'] });
       } catch (err) {
         // 旧后端未部署 draft 接口（404）：回退到 Pipeline 自动建项目的原始流程
         if ((err as { statusCode?: unknown })?.statusCode !== 404) throw err;
       }
     }
+
+    // 记录运行/对话归属项目（beginRun 会重置，需在确定 projectId 后补上）
+    if (projectId) usePipelineStore.getState().setDraftProject(projectId);
 
     for await (const event of streamPipeline(
       { ...params, projectId },
