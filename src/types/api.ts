@@ -80,7 +80,18 @@ export interface AuthResponse {
   user: User;
 }
 
+/** 会话消息（GET /api/projects/:id 随详情下发，按 created_at 正序） */
+export interface ProjectMessage {
+  id: string;
+  project_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  created_at: string;
+}
+
 export interface ProjectWithVersions {
   project: Project;
   versions: Version[];
+  // 可选：未部署 messages 字段的旧后端不返回，前端按空历史处理
+  messages?: ProjectMessage[];
 }

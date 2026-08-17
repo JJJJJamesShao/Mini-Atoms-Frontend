@@ -40,6 +40,27 @@ export default function ProjectPage() {
     }
   }, [projectId, versionNo, id, queryClient]);
 
+  // 会话历史水合：刷新后从项目详情重建对话气泡。
+  // 跳过两种情况：运行中（对话区被实时流驱动）；本项目有实时对话现场（水合会覆盖）
+  useEffect(() => {
+    if (!data) return;
+    const store = usePipelineStore.getState();
+    if (store.state === 'running' || store.state === 'stopping') return;
+    if (store.projectId === id && store.messages.length > 0) return;
+    store.hydrateMessages(
+      (data.messages ?? [])
+        .filter((m) => ['user', 'assistant', 'system'].includes(m.role))
+        .slice()
+        .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+        .map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: Date.parse(m.created_at),
+        })),
+    );
+  }, [data]);
+
   const versions = data?.versions ?? [];
   const latest = versions.length > 0 ? versions[versions.length - 1] : null;
   const current = selected ?? latest;
