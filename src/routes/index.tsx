@@ -26,9 +26,7 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold">用一句话生成你的应用</h1>
       </div>
       <div className="mx-auto w-full max-w-2xl pb-6">
-        <div className="h-64 rounded-lg border border-border bg-card">
-          <PipelineChat />
-        </div>
+        <PipelineChat inputOnly />
       </div>
     </div>
   );

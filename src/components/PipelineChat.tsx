@@ -12,6 +12,8 @@ interface PipelineChatProps {
   projectId?: string;
   currentFiles?: VersionFile[];
   baseVersionNo?: number;
+  /** 只渲染输入区（首页使用）：隐藏对话标题栏、消息历史和确认面板 */
+  inputOnly?: boolean;
 }
 
 const STATE_LABEL: Record<string, { text: string; className: string }> = {
@@ -26,6 +28,7 @@ export default function PipelineChat({
   projectId,
   currentFiles,
   baseVersionNo,
+  inputOnly = false,
 }: PipelineChatProps) {
   const [input, setInput] = useState('');
   const { state, start, stop } = usePipeline();
@@ -57,39 +60,42 @@ export default function PipelineChat({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">对话</span>
-          {mode === 'mock' && (
-            <span
-              className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
-              title="当前为演示模式（罐头数据），真实生成请联系管理员配置 LLM"
-            >
-              演示模式
-            </span>
-          )}
-          {mode === 'live' && (
-            <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
-              真实生成
-            </span>
-          )}
-          {pendingSpec && (
-            <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
-              待确认规格
-            </span>
-          )}
+      {!inputOnly && (
+        <div className="flex items-center justify-between border-b border-border px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">对话</span>
+            {mode === 'mock' && (
+              <span
+                className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
+                title="当前为演示模式（罐头数据），真实生成请联系管理员配置 LLM"
+              >
+                演示模式
+              </span>
+            )}
+            {mode === 'live' && (
+              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
+                真实生成
+              </span>
+            )}
+            {pendingSpec && (
+              <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
+                待确认规格
+              </span>
+            )}
+          </div>
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 text-xs font-medium',
+              badge.className,
+            )}
+          >
+            {badge.text}
+          </span>
         </div>
-        <span
-          className={cn(
-            'rounded-full px-2 py-0.5 text-xs font-medium',
-            badge.className,
-          )}
-        >
-          {badge.text}
-        </span>
-      </div>
+      )}
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      {!inputOnly && (
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((m) => (
           <div
             key={m.id}
@@ -128,11 +134,19 @@ export default function PipelineChat({
           </div>
         )}
         <div ref={bottomRef} />
-      </div>
+        </div>
+      )}
 
-      {pendingSpec && <SpecConfirmPanel spec={pendingSpec} />}
+      {!inputOnly && pendingSpec && <SpecConfirmPanel spec={pendingSpec} />}
 
-      <div className="border-t border-border p-3">
+      <div
+        className={cn(
+          'p-3',
+          inputOnly
+            ? 'rounded-lg border border-border bg-card'
+            : 'border-t border-border',
+        )}
+      >
         <textarea
           className="h-20 w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           placeholder={
