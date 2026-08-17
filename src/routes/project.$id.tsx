@@ -112,8 +112,8 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="grid h-full grid-cols-[420px_1fr]">
-      <div className="border-r border-border">
+    <div className="grid h-full min-h-0 grid-cols-[420px_1fr]">
+      <div className="min-h-0 border-r border-border">
         <PipelineChat
           projectId={id}
           currentFiles={latest?.files}
@@ -122,7 +122,7 @@ export default function ProjectPage() {
         />
       </div>
 
-      <div className="flex min-w-0 flex-col p-4">
+      <div className="flex min-h-0 min-w-0 flex-col p-4">
         <h1 className="mb-3 truncate text-lg font-semibold">
           {data.project.title}
         </h1>
