@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { Send, Square } from 'lucide-react';
+import SpecConfirmPanel from '@/components/SpecConfirmPanel';
 import { Button } from '@/components/ui/button';
 import { usePipeline } from '@/hooks/usePipeline';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ export default function PipelineChat({
   const messages = usePipelineStore((s) => s.messages);
   const questions = usePipelineStore((s) => s.questions);
   const mode = usePipelineStore((s) => s.mode);
+  const pendingSpec = usePipelineStore((s) => s.pendingSpec);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const running = state === 'running' || state === 'stopping';
@@ -69,6 +71,11 @@ export default function PipelineChat({
           {mode === 'live' && (
             <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
               真实生成
+            </span>
+          )}
+          {pendingSpec && (
+            <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
+              待确认规格
             </span>
           )}
         </div>
@@ -122,6 +129,8 @@ export default function PipelineChat({
         )}
         <div ref={bottomRef} />
       </div>
+
+      {pendingSpec && <SpecConfirmPanel spec={pendingSpec} />}
 
       <div className="border-t border-border p-3">
         <textarea

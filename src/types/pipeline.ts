@@ -1,4 +1,4 @@
-import type { VersionFile } from './api';
+import type { SpecOutput, VersionFile } from './api';
 
 // Pipeline 请求体与 SSE 事件沿用后端 camelCase 协议
 // （后端 zod schema 严格校验 camelCase，snake_case 字段会被静默丢弃）
@@ -12,6 +12,7 @@ export interface PipelineRequest {
 // SSE 事件联合类型
 export type SseEvent =
   | { type: 'start'; input: string; sop: { id: string; name: string; steps: string[] } }
+  | { type: 'spec_ready'; spec: UserFriendlySpec }
   | { type: 'agent_event'; payload: AgentEvent }
   | { type: 'heartbeat'; timestamp: number }
   | { type: 'project_created'; projectId: string; versionNo: number }
@@ -53,3 +54,15 @@ export interface AgentEvent {
 }
 
 export type PipelineState = 'idle' | 'running' | 'stopping' | 'done' | 'error';
+
+/**
+ * 确认门规格（后端 docs/pipeline-approve.md）：
+ * 首次生成在 generate 前挂起推送，等用户确认/反馈；raw 为技术规格原文，折叠展示。
+ * PIPELINE_AUTO_APPROVE 或 MOCK 冒烟时不会出现 spec_ready，面板逻辑必须是收到才展示。
+ */
+export interface UserFriendlySpec {
+  summary: string;
+  requirements: string[];
+  openQuestions: string[];
+  raw: SpecOutput;
+}
