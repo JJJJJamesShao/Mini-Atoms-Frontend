@@ -44,7 +44,7 @@ export default function ProjectPage() {
   // 跳过两种情况：运行中（对话区被实时流驱动）；对话区内容已归属本项目
   // （实时现场或已水合的历史，水合会覆盖）
   useEffect(() => {
-    if (!data) return;
+    if (!data || !id) return;
     const store = usePipelineStore.getState();
     if (store.state === 'running' || store.state === 'stopping') return;
     if (store.messagesProjectId === id && store.messages.length > 0) return;
