@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import PreviewFrame from '@/components/PreviewFrame';
 import VersionCard from '@/components/VersionCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { projectApi } from '@/lib/api';
-import { usePipelineStore } from '@/stores/pipelineStore';
+import { usePipelineStore, type ChatMessage } from '@/stores/pipelineStore';
 import type { Version } from '@/types/api';
 
 // 项目工作区：左侧对话 + 右侧（预览 / 阶段 / 版本）
@@ -45,17 +45,11 @@ export default function ProjectPage() {
     }
   }, [projectId, versionNo, id, queryClient]);
 
-  // 会话历史水合：刷新后从项目详情重建对话气泡。
-  // 跳过两种情况：运行中（对话区被实时流驱动）；对话区内容已归属本项目
-  // （实时现场或已水合的历史，水合会覆盖）
-  useEffect(() => {
-    if (!data || !id) return;
-    const store = usePipelineStore.getState();
-    if (store.state === 'running' || store.state === 'stopping') return;
-    if (store.messagesProjectId === id && store.messages.length > 0) return;
-    store.hydrateMessages(
-      id,
-      (data.messages ?? [])
+  // 会话历史（查询驱动）：作为 prop 传给 PipelineChat，由其按归属决定
+  // 显示实时现场还是历史——运行中切换项目互不干扰
+  const historyMessages = useMemo<ChatMessage[]>(
+    () =>
+      (data?.messages ?? [])
         .filter((m) => ['user', 'assistant', 'system'].includes(m.role))
         .slice()
         .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
@@ -65,8 +59,8 @@ export default function ProjectPage() {
           content: m.content,
           timestamp: Date.parse(m.created_at),
         })),
-    );
-  }, [data]);
+    [data],
+  );
 
   const versions = data?.versions ?? [];
   const latest = versions.length > 0 ? versions[versions.length - 1] : null;
@@ -124,6 +118,7 @@ export default function ProjectPage() {
           projectId={id}
           currentFiles={latest?.files}
           baseVersionNo={latest?.version_no}
+          historyMessages={historyMessages}
         />
       </div>
 
