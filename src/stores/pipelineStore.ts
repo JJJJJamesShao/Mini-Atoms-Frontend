@@ -37,6 +37,8 @@ interface PipelineStore {
   runStartedAt: number | null;
   /** 确认门挂起中的规格（spec_ready）；非 null 时展示确认面板 */
   pendingSpec: UserFriendlySpec | null;
+  /** messages 归属的项目：水合/运行时记录，守卫跨项目串显 */
+  messagesProjectId: string | null;
 
   /** 开始一次运行：重置运行态并记录用户输入 */
   beginRun: (input: string) => void;
@@ -44,6 +46,8 @@ interface PipelineStore {
   setDraftProject: (projectId: string) => void;
   /** 用户落锤/超时/异常后收起规格确认面板 */
   clearPendingSpec: () => void;
+  /** 打开项目时用服务端历史整体替换对话区（仅在非运行态调用），并记录归属项目 */
+  hydrateMessages: (projectId: string, messages: ChatMessage[]) => void;
   /** 由 usePipeline 驱动：处理一条 SSE 事件 */
   handleEvent: (event: SseEvent) => void;
   setError: (message: string) => void;
@@ -71,6 +75,7 @@ const initialRunState = {
   mode: null as 'mock' | 'live' | null,
   runStartedAt: null as number | null,
   pendingSpec: null as UserFriendlySpec | null,
+  messagesProjectId: null as string | null,
 };
 
 /** 失败原因 → 用户可读文案（与后端 failReasonText 对齐） */
@@ -106,9 +111,12 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
       ],
     })),
 
-  setDraftProject: (projectId) => set({ projectId }),
+  setDraftProject: (projectId) => set({ projectId, messagesProjectId: projectId }),
 
   clearPendingSpec: () => set({ pendingSpec: null }),
+
+  hydrateMessages: (projectId, messages) =>
+    set({ messages, messagesProjectId: projectId }),
 
   handleEvent: (event) =>
     set((s) => {
@@ -186,7 +194,11 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
 
         case 'project_created':
         case 'project_updated':
-          return { projectId: event.projectId, versionNo: event.versionNo };
+          return {
+            projectId: event.projectId,
+            versionNo: event.versionNo,
+            messagesProjectId: event.projectId,
+          };
 
         case 'done': {
           const ok = event.finalState === 'done';
@@ -217,6 +229,7 @@ export const usePipelineStore = create<PipelineStore>((set) => ({
             questions: event.questions,
             quality: event.quality,
             projectId: event.projectId ?? s.projectId,
+            messagesProjectId: event.projectId ?? s.messagesProjectId,
             error: ok ? null : failReasonText(event.reason),
             stages: s.stages.map((st) =>
               st.status === 'active'
